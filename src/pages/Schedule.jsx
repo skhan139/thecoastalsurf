@@ -1,0 +1,396 @@
+import { useEffect, useState } from 'react'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { db, hasRequiredConfig } from '../firebase'
+import './Registration.css'
+
+const paymentsApiBaseUrl = import.meta.env.VITE_PAYMENTS_API_URL
+
+const campOptions = [
+  { value: 'summer-camp-2026', label: 'Summer Camp 2026' },
+  { value: 'skills-clinic-2026', label: 'Skills Clinic 2026' },
+]
+
+const paymentPlans = [
+  { value: 'deposit', label: 'Reserve Spot (Deposit)', amount: 150 },
+  { value: 'full', label: 'Pay In Full', amount: 495 },
+]
+
+export default function Registration() {
+  const [formData, setFormData] = useState({
+    camp: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    age: '',
+    position: '',
+    experience: '',
+    parentName: '',
+    parentPhone: '',
+    message: ''
+  })
+  const [selectedPlan, setSelectedPlan] = useState(paymentPlans[0].value)
+
+  const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [paymentBanner, setPaymentBanner] = useState('')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const params = new URLSearchParams(window.location.search)
+    const paymentStatus = params.get('payment')
+
+    if (paymentStatus === 'success') {
+      setPaymentBanner('✅ Payment completed successfully. We received your registration and payment details.')
+    } else if (paymentStatus === 'cancel') {
+      setPaymentBanner('⚠️ Payment was canceled. You can submit the form again when ready.')
+    }
+  }, [])
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const resetForm = () => {
+    setFormData({
+      camp: '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      age: '',
+      position: '',
+      experience: '',
+      parentName: '',
+      parentPhone: '',
+      message: '',
+    })
+    setSelectedPlan(paymentPlans[0].value)
+  }
+
+  const selectedPlanDetails = paymentPlans.find((plan) => plan.value === selectedPlan)
+
+  const getReturnUrl = (status) => {
+    if (typeof window === 'undefined') return ''
+    return `${window.location.origin}/camp-registration?payment=${status}`
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSubmitted(false)
+    setSubmitError('')
+
+    if (!hasRequiredConfig || !db) {
+      setSubmitError('Firebase is not configured yet. Add your Firebase keys to the .env file and restart the app.')
+      return
+    }
+
+    if (!paymentsApiBaseUrl) {
+      setSubmitError('Payments API is not configured. Add VITE_PAYMENTS_API_URL to .env and restart the app.')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const registrationRef = await addDoc(collection(db, 'campRegistrations'), {
+        ...formData,
+        paymentPlan: selectedPlan,
+        paymentAmount: selectedPlanDetails?.amount ?? 0,
+        paymentStatus: 'pending',
+        age: Number(formData.age),
+        createdAt: serverTimestamp(),
+        source: 'website',
+      })
+
+      const paymentResponse = await fetch(`${paymentsApiBaseUrl}/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          registrationId: registrationRef.id,
+          camp: formData.camp,
+          athleteName: `${formData.firstName} ${formData.lastName}`,
+          parentName: formData.parentName,
+          parentEmail: formData.email,
+          parentPhone: formData.parentPhone,
+          paymentPlan: selectedPlan,
+          amount: selectedPlanDetails?.amount ?? 0,
+          successUrl: getReturnUrl('success'),
+          cancelUrl: getReturnUrl('cancel'),
+        }),
+      })
+
+      if (!paymentResponse.ok) {
+        throw new Error('payment-session-failed')
+      }
+
+      const paymentData = await paymentResponse.json()
+
+      if (!paymentData?.checkoutUrl) {
+        throw new Error('payment-session-invalid')
+      }
+
+      window.location.assign(paymentData.checkoutUrl)
+
+      setSubmitted(true)
+      resetForm()
+    } catch (error) {
+      const errorCode = error?.code || error?.message
+
+      if (errorCode === 'permission-denied') {
+        setSubmitError('Firebase is connected, but Firestore rules are blocking writes. Update rules to allow this form collection.')
+      } else if (errorCode === 'unavailable' || errorCode === 'submission-timeout') {
+        setSubmitError('Connection timed out. Please check your internet/firewall and try again.')
+      } else if (errorCode === 'payment-session-failed' || errorCode === 'payment-session-invalid') {
+        setSubmitError('Registration was saved, but we could not start secure card checkout. Please try again in a moment.')
+      } else {
+        setSubmitError('We could not submit your registration right now. Please try again.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const positions = ['Pitcher', 'Catcher', 'Infielder', 'Outfielder', 'Utility']
+  const experience = ['Beginner', 'Intermediate', 'Advanced', 'Elite']
+
+  return (
+    <div className="registration-page">
+      <div className="page-header">
+        <h1>Player Registration</h1>
+        <p>Join The Coastal Surf Elite Travel Baseball Program</p>
+      </div>
+
+      <section className="registration-section">
+        {paymentBanner && <div className="success-message payment-status-banner">{paymentBanner}</div>}
+
+        <div className="registration-container">
+          <div className="registration-info">
+            <div className="info-card">
+              <div className="info-icon">⚾</div>
+              <h3>Competitive Play</h3>
+              <p>Compete against top teams in competitive tournaments and showcase your skills.</p>
+            </div>
+            <div className="info-card">
+              <div className="info-icon">🏆</div>
+              <h3>Elite Coaching</h3>
+              <p>Learn from experienced coaches dedicated to player development and success.</p>
+            </div>
+            <div className="info-card">
+              <div className="info-icon">👥</div>
+              <h3>Team Community</h3>
+              <p>Build lasting friendships and brotherhood with talented athletes from the area.</p>
+            </div>
+            <div className="info-card">
+              <div className="info-icon">🎯</div>
+              <h3>Development</h3>
+              <p>Enhance your skills through personalized training and professional guidance.</p>
+            </div>
+          </div>
+
+          <form className="registration-form" onSubmit={handleSubmit}>
+            <h2>Register Now</h2>
+
+            <div className="form-group">
+              <label htmlFor="camp">Camp Session *</label>
+              <select
+                id="camp"
+                name="camp"
+                value={formData.camp}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select a camp session</option>
+                {campOptions.map((camp) => (
+                  <option key={camp.value} value={camp.value}>{camp.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="firstName">First Name *</label>
+                <input
+                  type="text"
+                  id="firstName"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="lastName">Last Name *</label>
+                <input
+                  type="text"
+                  id="lastName"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="email">Email *</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="phone">Phone *</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="age">Age *</label>
+                <input
+                  type="number"
+                  id="age"
+                  name="age"
+                  min="6"
+                  max="18"
+                  value={formData.age}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="position">Primary Position *</label>
+                <select
+                  id="position"
+                  name="position"
+                  value={formData.position}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select a position</option>
+                  {positions.map(pos => (
+                    <option key={pos} value={pos}>{pos}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="experience">Experience Level *</label>
+              <select
+                id="experience"
+                name="experience"
+                value={formData.experience}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select experience level</option>
+                {experience.map(exp => (
+                  <option key={exp} value={exp}>{exp}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-divider">
+              <h3>Parent/Guardian Information</h3>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="parentName">Parent/Guardian Name *</label>
+                <input
+                  type="text"
+                  id="parentName"
+                  name="parentName"
+                  value={formData.parentName}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="parentPhone">Parent/Guardian Phone *</label>
+                <input
+                  type="tel"
+                  id="parentPhone"
+                  name="parentPhone"
+                  value={formData.parentPhone}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="message">Additional Information</label>
+              <textarea
+                id="message"
+                name="message"
+                rows="4"
+                placeholder="Tell us about your baseball goals and aspirations..."
+                value={formData.message}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-divider">
+              <h3>Payment</h3>
+            </div>
+
+            <div className="payment-plan-grid" role="radiogroup" aria-label="Payment options">
+              {paymentPlans.map((plan) => (
+                <label key={plan.value} className={`payment-plan-card ${selectedPlan === plan.value ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="paymentPlan"
+                    value={plan.value}
+                    checked={selectedPlan === plan.value}
+                    onChange={(e) => setSelectedPlan(e.target.value)}
+                  />
+                  <span className="payment-plan-label">{plan.label}</span>
+                  <span className="payment-plan-amount">${plan.amount}</span>
+                </label>
+              ))}
+            </div>
+
+            <p className="payment-disclaimer">
+              After clicking below, you will be redirected to secure card checkout to complete payment.
+            </p>
+
+            <button type="submit" className="submit-button" disabled={isSubmitting}>
+              {isSubmitting ? 'Preparing Secure Checkout...' : 'Continue to Card Payment'}
+            </button>
+            
+            {submitted && (
+              <div className="success-message">
+                ✓ Registration received! Redirecting to secure card checkout...
+              </div>
+            )}
+
+            {submitError && <div className="error-message">{submitError}</div>}
+          </form>
+        </div>
+      </section>
+    </div>
+  )
+}

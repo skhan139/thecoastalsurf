@@ -1,0 +1,115 @@
+.schedule-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.schedule-section {
+  padding: 2rem 0;
+}
+
+.schedule-container {
+  background-color: var(--black-light);
+  border-radius: 10px;
+  padding: 2rem;
+  border: 2px solid var(--teal);
+}
+
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.game-card {
+  display: grid;
+  grid-template-columns: 150px 1fr 150px;
+  gap: 2rem;
+  align-items: center;
+  background: rgba(32, 178, 170, 0.05);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 4px solid var(--teal);
+  transition: all 0.3s ease;
+}
+
+.game-card:hover {
+  background: rgba(32, 178, 170, 0.1);
+  transform: translateX(5px);
+}
+
+.game-date {
+  text-align: center;
+}
+
+.date-display {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: var(--teal-light);
+}
+
+.time {
+  font-size: 0.9rem;
+  color: #999999;
+  margin-top: 0.5rem;
+}
+
+.game-info {
+  flex: 1;
+}
+
+.opponent {
+  font-size: 1.3rem;
+  color: var(--teal-light);
+  margin-bottom: 0.5rem;
+}
+
+.location {
+  color: #cccccc;
+  font-size: 0.95rem;
+}
+
+.game-result {
+  font-weight: bold;
+  padding: 0.75rem 1.5rem;
+  border-radius: 5px;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.game-result.win {
+  background-color: rgba(32, 178, 170, 0.3);
+  color: var(--teal-light);
+}
+
+.game-result.loss {
+  background-color: rgba(200, 50, 50, 0.3);
+  color: #ff6b6b;
+}
+
+.game-result.upcoming {
+  background-color: rgba(100, 100, 100, 0.3);
+  color: #999999;
+}
+
+@media (max-width: 768px) {
+  .game-card {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .game-date {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .date-display,
+  .time {
+    margin: 0;
+  }
+
+  .game-result {
+    text-align: left;
+  }
+}

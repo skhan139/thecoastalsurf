@@ -1,0 +1,149 @@
+.team-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 4rem;
+  padding: 3.5rem 0;
+  border-bottom: 1px solid rgba(32, 178, 170, 0.3);
+}
+
+.page-header h1 {
+  font-size: 3.2rem;
+  background: linear-gradient(135deg, var(--teal-light) 0%, var(--teal) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+  font-weight: 800;
+}
+
+.page-header p {
+  font-size: 1.1rem;
+  color: #a0a0b0;
+}
+
+.team-section {
+  margin-bottom: 5rem;
+}
+
+.team-section h2 {
+  font-size: 2.2rem;
+  color: var(--teal-light);
+  margin-bottom: 3rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.coaches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2.5rem;
+}
+
+.coach-card {
+  background: linear-gradient(135deg, rgba(32, 178, 170, 0.1) 0%, rgba(32, 178, 170, 0.05) 100%);
+  padding: 2.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(32, 178, 170, 0.3);
+  text-align: center;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+}
+
+.coach-card:hover {
+  background: linear-gradient(135deg, rgba(32, 178, 170, 0.15) 0%, rgba(32, 178, 170, 0.08) 100%);
+  transform: translateY(-8px);
+  border-color: rgba(32, 178, 170, 0.6);
+  box-shadow: var(--shadow-lg);
+}
+
+.coach-avatar,
+.player-avatar {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.coach-card h3,
+.player-card h3 {
+  color: var(--teal-light);
+  margin-bottom: 0.75rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.coach-title {
+  color: #909090;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 2.5rem;
+}
+
+.player-card {
+  background: linear-gradient(135deg, rgba(32, 178, 170, 0.1) 0%, rgba(32, 178, 170, 0.05) 100%);
+  padding: 2.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(32, 178, 170, 0.3);
+  text-align: center;
+  transition: var(--transition);
+  position: relative;
+  backdrop-filter: blur(10px);
+}
+
+.player-card:hover {
+  background: linear-gradient(135deg, rgba(32, 178, 170, 0.15) 0%, rgba(32, 178, 170, 0.08) 100%);
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(32, 178, 170, 0.6);
+  box-shadow: var(--shadow-lg);
+}
+
+.player-number {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: linear-gradient(135deg, var(--teal-light) 0%, var(--teal) 100%);
+  color: var(--black);
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 12px rgba(32, 178, 170, 0.3);
+}
+
+.player-position {
+  color: #909090;
+  font-size: 0.9rem;
+  margin-top: 0.75rem;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .page-header h1 {
+    font-size: 2.2rem;
+  }
+
+  .team-section h2 {
+    font-size: 1.8rem;
+  }
+
+  .coaches-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .players-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
