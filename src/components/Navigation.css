@@ -46,7 +46,11 @@
 }
 
 .logo-icon {
-  font-size: 1.8rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(32, 178, 170, 0.55);
   filter: drop-shadow(0 0 10px rgba(32, 178, 170, 0.45));
   transform-origin: center;
   animation: logoPulse 2.6s ease-in-out infinite;

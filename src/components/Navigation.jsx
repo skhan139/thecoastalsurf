@@ -6,7 +6,7 @@ export default function Navigation() {
     <nav className="navbar">
       <div className="nav-container">
         <Link to="/" className="nav-logo">
-          <span className="logo-icon">⚾</span>
+          <img className="logo-icon" src="/images/baseball.jpg" alt="Baseball" />
           <span className="logo-text">The Coastal Surf</span>
         </Link>
         <div className="nav-menu">
