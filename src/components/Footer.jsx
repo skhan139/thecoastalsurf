@@ -22,8 +22,8 @@ export default function Footer() {
         </div>
         <div className="footer-section">
           <h4>Contact</h4>
-          <p>Email: info@coastalsurf.com</p>
-          <p>Phone: (555) 123-4567</p>
+          <p>Email: info@coastalsurfbaseball.com</p>
+          <p>Phone: (843) 295-0010</p>
         </div>
       </div>
       <div className="footer-bottom">

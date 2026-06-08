@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db, hasRequiredConfig } from '../firebase'
 import './Registration.css'
@@ -7,17 +6,33 @@ import './Registration.css'
 const paymentsApiBaseUrl = import.meta.env.VITE_PAYMENTS_API_URL
 
 const campOptions = [
+  { value: 'travel-ball-2026', label: 'Travel Ball' },
   { value: 'summer-camp-2026', label: 'Summer Camp 2026' },
   { value: 'skills-clinic-2026', label: 'Skills Clinic 2026' },
 ]
 
 const paymentPlans = [
-  { value: 'deposit', label: 'Reserve Spot (Deposit)', amount: 150 },
-  { value: 'full', label: 'Pay In Full', amount: 495 },
+  { value: 'deposit', label: 'Weekly Camp', amount: 200 },
+  { value: 'full', label: 'All Session Participation', amount: 600 },
 ]
 
-export default function Registration() {
-  const location = useLocation()
+const registrationConfig = {
+  camp: {
+    returnPath: '/camp-registration',
+    preselectedCamp: 'summer-camp-2026',
+  },
+  travelBall: {
+    returnPath: '/travel-ball-registration',
+    preselectedCamp: 'travel-ball-2026',
+  },
+  clinic: {
+    returnPath: '/clinic-registration',
+    preselectedCamp: 'skills-clinic-2026',
+  },
+}
+
+export default function Registration({ registrationType = 'camp' }) {
+  const selectedRegistrationConfig = registrationConfig[registrationType] || registrationConfig.camp
   const [formData, setFormData] = useState({
     camp: '',
     firstName: '',
@@ -45,13 +60,7 @@ export default function Registration() {
     const params = new URLSearchParams(window.location.search)
     const paymentStatus = params.get('payment')
     const preselectedCampFromQuery = params.get('camp')
-    const preselectedCampFromPath = location.pathname === '/clinic-registration'
-      ? 'skills-clinic-2026'
-      : location.pathname === '/travel-ball-registration'
-        ? 'summer-camp-2026'
-        : ''
-
-    const preselectedCamp = preselectedCampFromQuery || preselectedCampFromPath
+    const preselectedCamp = preselectedCampFromQuery || selectedRegistrationConfig.preselectedCamp
 
     if (preselectedCamp && campOptions.some((camp) => camp.value === preselectedCamp)) {
       setFormData((prev) => ({
@@ -65,7 +74,7 @@ export default function Registration() {
     } else if (paymentStatus === 'cancel') {
       setPaymentBanner('⚠️ Payment was canceled. You can submit the form again when ready.')
     }
-  }, [location.pathname])
+  }, [selectedRegistrationConfig.preselectedCamp])
 
   const calculateAge = (dobString) => {
     if (!dobString) {
@@ -127,10 +136,12 @@ export default function Registration() {
   }
 
   const selectedPlanDetails = paymentPlans.find((plan) => plan.value === selectedPlan)
+  const registrationImageSrc = formData.camp === 'travel-ball-2026' ? '/images/neworg.jpg' : '/images/flyer.jpg'
+  const registrationImageAlt = formData.camp === 'travel-ball-2026' ? 'Travel Ball registration image' : 'Registration flyer'
 
   const getReturnUrl = (status) => {
     if (typeof window === 'undefined') return ''
-    return `${window.location.origin}${location.pathname}?payment=${status}`
+    return `${window.location.origin}${selectedRegistrationConfig.returnPath}?payment=${status}`
   }
 
   const handleSubmit = async (e) => {
@@ -251,7 +262,7 @@ export default function Registration() {
 
         <div className="registration-container">
           <div className="registration-info">
-            <img src="/images/flyer.jpg" alt="Registration flyer" className="registration-flyer" />
+            <img src={registrationImageSrc} alt={registrationImageAlt} className="registration-flyer" />
             <div className="info-card">
               <div className="info-icon">⚾</div>
               <h3>Competitive Play</h3>
@@ -278,7 +289,7 @@ export default function Registration() {
             <h2>Register Now</h2>
 
             <div className="form-group">
-              <label htmlFor="camp">Camp Session *</label>
+              <label htmlFor="camp">Select Registration *</label>
               <select
                 id="camp"
                 name="camp"
@@ -286,7 +297,7 @@ export default function Registration() {
                 onChange={handleChange}
                 required
               >
-                <option value="">Select a camp session</option>
+                <option value="">Select registration type</option>
                 {campOptions.map((camp) => (
                   <option key={camp.value} value={camp.value}>{camp.label}</option>
                 ))}
