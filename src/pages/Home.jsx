@@ -9,13 +9,22 @@ export default function Home() {
         <div className="hero-layout">
           <div className="hero-image-wrap">
             <img src="/images/neworg.jpg" alt="The Coastal Surf organization" className="hero-image" />
+            <div className="hero-image-actions">
+              <a
+                href="/images/neworg.jpg"
+                download="coastal-surf-organization.jpg"
+                className="download-image-button"
+              >
+                Download Image
+              </a>
+            </div>
           </div>
           <div className="hero-content">
             <div className="hero-title-images" aria-hidden="true">
-              <img src="/images/baseball.jpg" alt="" className="hero-title-image" />
               <img src="/images/softball.jpg" alt="" className="hero-title-image" />
+                <img src="/images/baseball.jpg" alt="" className="hero-title-image" />
             </div>
-            <h1>The Coastal Surf</h1>
+            <h1>Coastal Surf Baseball</h1>
             <p className="tagline">Elite Travel Baseball Program</p>
             <p className="hero-description">
               Developing exceptional young athletes through competitive baseball,

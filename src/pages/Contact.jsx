@@ -44,17 +44,17 @@ export default function Contact() {
             <div className="info-card">
               <div className="info-icon">📧</div>
               <h3>Email</h3>
-              <p><a href="mailto:info@coastalsurf.com">info@coastalsurf.com</a></p>
+              <p><a href="mailto:info@coastalsurfbaseball.com">info@coastalsurfbaseball.com</a></p>
             </div>
             <div className="info-card">
               <div className="info-icon">📱</div>
               <h3>Phone</h3>
-              <p><a href="tel:+15551234567">(555) 123-4567</a></p>
+              <p><a href="tel:+8432950010">(843) 295-0010</a></p>
             </div>
             <div className="info-card">
               <div className="info-icon">📍</div>
               <h3>Address</h3>
-              <p>123 Coastal Avenue<br />Surfer City, CA 90210</p>
+              <p>209 Horsetail Moss CT<br />Myrtle Beach, SC 29588</p>
             </div>
             <div className="info-card">
               <div className="info-icon">🕐</div>

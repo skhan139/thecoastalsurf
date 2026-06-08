@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db, hasRequiredConfig } from '../firebase'
 import './Registration.css'
@@ -16,19 +17,21 @@ const paymentPlans = [
 ]
 
 export default function Registration() {
+  const location = useLocation()
   const [formData, setFormData] = useState({
     camp: '',
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    age: '',
+    dateOfBirth: '',
     position: '',
     experience: '',
     parentName: '',
     parentPhone: '',
     message: ''
   })
+  const [calculatedAge, setCalculatedAge] = useState('')
   const [selectedPlan, setSelectedPlan] = useState(paymentPlans[0].value)
 
   const [submitted, setSubmitted] = useState(false)
@@ -41,13 +44,57 @@ export default function Registration() {
 
     const params = new URLSearchParams(window.location.search)
     const paymentStatus = params.get('payment')
+    const preselectedCampFromQuery = params.get('camp')
+    const preselectedCampFromPath = location.pathname === '/clinic-registration'
+      ? 'skills-clinic-2026'
+      : location.pathname === '/travel-ball-registration'
+        ? 'summer-camp-2026'
+        : ''
+
+    const preselectedCamp = preselectedCampFromQuery || preselectedCampFromPath
+
+    if (preselectedCamp && campOptions.some((camp) => camp.value === preselectedCamp)) {
+      setFormData((prev) => ({
+        ...prev,
+        camp: preselectedCamp,
+      }))
+    }
 
     if (paymentStatus === 'success') {
       setPaymentBanner('✅ Payment completed successfully. We received your registration and payment details.')
     } else if (paymentStatus === 'cancel') {
       setPaymentBanner('⚠️ Payment was canceled. You can submit the form again when ready.')
     }
-  }, [])
+  }, [location.pathname])
+
+  const calculateAge = (dobString) => {
+    if (!dobString) {
+      setCalculatedAge('')
+      return
+    }
+
+    const [month, day, year] = dobString.split('/').map(Number)
+    if (!month || !day || !year) {
+      setCalculatedAge('')
+      return
+    }
+
+    const birthDate = new Date(year, month - 1, day)
+    const today = new Date()
+
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+
+    if (age >= 0) {
+      setCalculatedAge(age.toString())
+    } else {
+      setCalculatedAge('')
+    }
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -55,6 +102,10 @@ export default function Registration() {
       ...prev,
       [name]: value
     }))
+
+    if (name === 'dateOfBirth') {
+      calculateAge(value)
+    }
   }
 
   const resetForm = () => {
@@ -64,13 +115,14 @@ export default function Registration() {
       lastName: '',
       email: '',
       phone: '',
-      age: '',
+      dateOfBirth: '',
       position: '',
       experience: '',
       parentName: '',
       parentPhone: '',
       message: '',
     })
+    setCalculatedAge('')
     setSelectedPlan(paymentPlans[0].value)
   }
 
@@ -78,7 +130,7 @@ export default function Registration() {
 
   const getReturnUrl = (status) => {
     if (typeof window === 'undefined') return ''
-    return `${window.location.origin}/camp-registration?payment=${status}`
+    return `${window.location.origin}${location.pathname}?payment=${status}`
   }
 
   const handleSubmit = async (e) => {
@@ -104,51 +156,76 @@ export default function Registration() {
         paymentPlan: selectedPlan,
         paymentAmount: selectedPlanDetails?.amount ?? 0,
         paymentStatus: 'pending',
-        age: Number(formData.age),
+        age: calculatedAge ? Number(calculatedAge) : null,
         createdAt: serverTimestamp(),
         source: 'website',
       })
 
-      const paymentResponse = await fetch(`${paymentsApiBaseUrl}/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          registrationId: registrationRef.id,
-          camp: formData.camp,
-          athleteName: `${formData.firstName} ${formData.lastName}`,
-          parentName: formData.parentName,
-          parentEmail: formData.email,
-          parentPhone: formData.parentPhone,
-          paymentPlan: selectedPlan,
-          amount: selectedPlanDetails?.amount ?? 0,
-          successUrl: getReturnUrl('success'),
-          cancelUrl: getReturnUrl('cancel'),
-        }),
-      })
+      console.log('Registration saved:', registrationRef.id)
+      console.log('Calling payments API at:', `${paymentsApiBaseUrl}/create-checkout-session`)
+
+      const checkoutController = new AbortController()
+      const checkoutTimeoutId = window.setTimeout(() => {
+        checkoutController.abort()
+      }, 12000)
+
+      let paymentResponse
+
+      try {
+        paymentResponse = await fetch(`${paymentsApiBaseUrl}/create-checkout-session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: checkoutController.signal,
+          body: JSON.stringify({
+            registrationId: registrationRef.id,
+            camp: formData.camp,
+            athleteName: `${formData.firstName} ${formData.lastName}`,
+            parentName: formData.parentName,
+            parentEmail: formData.email,
+            parentPhone: formData.parentPhone,
+            paymentPlan: selectedPlan,
+            amount: selectedPlanDetails?.amount ?? 0,
+            successUrl: getReturnUrl('success'),
+            cancelUrl: getReturnUrl('cancel'),
+          }),
+        })
+      } finally {
+        window.clearTimeout(checkoutTimeoutId)
+      }
+
+      console.log('Payment API response status:', paymentResponse.status)
 
       if (!paymentResponse.ok) {
+        const errorData = await paymentResponse.text()
+        console.error('Payment API error:', errorData)
         throw new Error('payment-session-failed')
       }
 
       const paymentData = await paymentResponse.json()
+      console.log('Checkout URL received:', paymentData.checkoutUrl)
 
       if (!paymentData?.checkoutUrl) {
+        console.error('No checkout URL in response:', paymentData)
         throw new Error('payment-session-invalid')
       }
 
+      console.log('Redirecting to Stripe checkout...')
       window.location.assign(paymentData.checkoutUrl)
 
       setSubmitted(true)
       resetForm()
     } catch (error) {
       const errorCode = error?.code || error?.message
+      const errorName = error?.name
 
       if (errorCode === 'permission-denied') {
         setSubmitError('Firebase is connected, but Firestore rules are blocking writes. Update rules to allow this form collection.')
-      } else if (errorCode === 'unavailable' || errorCode === 'submission-timeout') {
+      } else if (errorCode === 'unavailable' || errorCode === 'submission-timeout' || errorName === 'AbortError') {
         setSubmitError('Connection timed out. Please check your internet/firewall and try again.')
+      } else if (errorName === 'TypeError') {
+        setSubmitError('Could not reach the payments server. Start it with npm run payments:dev and confirm VITE_PAYMENTS_API_URL is correct.')
       } else if (errorCode === 'payment-session-failed' || errorCode === 'payment-session-invalid') {
         setSubmitError('Registration was saved, but we could not start secure card checkout. Please try again in a moment.')
       } else {
@@ -174,6 +251,7 @@ export default function Registration() {
 
         <div className="registration-container">
           <div className="registration-info">
+            <img src="/images/flyer.jpg" alt="Registration flyer" className="registration-flyer" />
             <div className="info-card">
               <div className="info-icon">⚾</div>
               <h3>Competitive Play</h3>
@@ -204,7 +282,7 @@ export default function Registration() {
               <select
                 id="camp"
                 name="camp"
-                value={formData.camp}
+                value={formData.camp || ''}
                 onChange={handleChange}
                 required
               >
@@ -222,7 +300,7 @@ export default function Registration() {
                   type="text"
                   id="firstName"
                   name="firstName"
-                  value={formData.firstName}
+                  value={formData.firstName || ''}
                   onChange={handleChange}
                   required
                 />
@@ -233,7 +311,7 @@ export default function Registration() {
                   type="text"
                   id="lastName"
                   name="lastName"
-                  value={formData.lastName}
+                  value={formData.lastName || ''}
                   onChange={handleChange}
                   required
                 />
@@ -247,7 +325,7 @@ export default function Registration() {
                   type="email"
                   id="email"
                   name="email"
-                  value={formData.email}
+                  value={formData.email || ''}
                   onChange={handleChange}
                   required
                 />
@@ -258,7 +336,7 @@ export default function Registration() {
                   type="tel"
                   id="phone"
                   name="phone"
-                  value={formData.phone}
+                  value={formData.phone || ''}
                   onChange={handleChange}
                   required
                 />
@@ -267,24 +345,24 @@ export default function Registration() {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="age">Age *</label>
+                <label htmlFor="dateOfBirth">Date of Birth (MM/DD/YYYY) *</label>
                 <input
-                  type="number"
-                  id="age"
-                  name="age"
-                  min="6"
-                  max="18"
-                  value={formData.age}
+                  type="text"
+                  id="dateOfBirth"
+                  name="dateOfBirth"
+                  placeholder="MM/DD/YYYY"
+                  value={formData.dateOfBirth || ''}
                   onChange={handleChange}
                   required
                 />
+                {calculatedAge && <p className="calculated-age">Age: {calculatedAge}</p>}
               </div>
               <div className="form-group">
                 <label htmlFor="position">Primary Position *</label>
                 <select
                   id="position"
                   name="position"
-                  value={formData.position}
+                  value={formData.position || ''}
                   onChange={handleChange}
                   required
                 >
@@ -301,7 +379,7 @@ export default function Registration() {
               <select
                 id="experience"
                 name="experience"
-                value={formData.experience}
+                value={formData.experience || ''}
                 onChange={handleChange}
                 required
               >
@@ -323,7 +401,7 @@ export default function Registration() {
                   type="text"
                   id="parentName"
                   name="parentName"
-                  value={formData.parentName}
+                  value={formData.parentName || ''}
                   onChange={handleChange}
                   required
                 />
@@ -334,7 +412,7 @@ export default function Registration() {
                   type="tel"
                   id="parentPhone"
                   name="parentPhone"
-                  value={formData.parentPhone}
+                  value={formData.parentPhone || ''}
                   onChange={handleChange}
                   required
                 />
@@ -348,7 +426,7 @@ export default function Registration() {
                 name="message"
                 rows="4"
                 placeholder="Tell us about your baseball goals and aspirations..."
-                value={formData.message}
+                value={formData.message || ''}
                 onChange={handleChange}
               />
             </div>

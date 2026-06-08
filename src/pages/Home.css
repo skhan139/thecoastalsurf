@@ -88,6 +88,30 @@
   border-radius: 12px;
 }
 
+.hero-image-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.75rem;
+  padding-bottom: 0.35rem;
+}
+
+.download-image-button {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--teal-light);
+  padding: 0.65rem 1.1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: 1px solid rgba(32, 178, 170, 0.5);
+}
+
+.download-image-button:hover {
+  background: linear-gradient(135deg, var(--teal-light) 0%, var(--teal) 100%);
+  color: var(--black);
+  border-color: transparent;
+}
+
 .hero h1 {
   font-size: 4.5rem;
   margin-bottom: 1rem;
