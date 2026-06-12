@@ -11,9 +11,14 @@ const campOptions = [
   { value: 'skills-clinic-2026', label: 'Skills Clinic 2026' },
 ]
 
-const paymentPlans = [
+const campPaymentPlans = [
   { value: 'deposit', label: 'Weekly Camp', amount: 200 },
   { value: 'full', label: 'All Session Participation', amount: 600 },
+]
+
+const travelBallPaymentPlans = [
+  { value: 'tryout', label: 'Tryout Fee', amount: 0 },
+  { value: 'seasonal', label: 'Seasonal Registration', amount: 0 },
 ]
 
 const registrationConfig = {
@@ -47,7 +52,7 @@ export default function Registration({ registrationType = 'camp' }) {
     message: ''
   })
   const [calculatedAge, setCalculatedAge] = useState('')
-  const [selectedPlan, setSelectedPlan] = useState(paymentPlans[0].value)
+  const [selectedPlan, setSelectedPlan] = useState(campPaymentPlans[0].value)
 
   const [submitted, setSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -115,6 +120,11 @@ export default function Registration({ registrationType = 'camp' }) {
     if (name === 'dateOfBirth') {
       calculateAge(value)
     }
+
+    if (name === 'camp') {
+      const plans = value === 'travel-ball-2026' ? travelBallPaymentPlans : campPaymentPlans
+      setSelectedPlan(plans[0].value)
+    }
   }
 
   const resetForm = () => {
@@ -132,10 +142,12 @@ export default function Registration({ registrationType = 'camp' }) {
       message: '',
     })
     setCalculatedAge('')
-    setSelectedPlan(paymentPlans[0].value)
+    setSelectedPlan(campPaymentPlans[0].value)
   }
 
-  const selectedPlanDetails = paymentPlans.find((plan) => plan.value === selectedPlan)
+  const isTravelBall = formData.camp === 'travel-ball-2026'
+  const activePaymentPlans = isTravelBall ? travelBallPaymentPlans : campPaymentPlans
+  const selectedPlanDetails = activePaymentPlans.find((plan) => plan.value === selectedPlan) ?? activePaymentPlans[0]
   const registrationImageSrc = formData.camp === 'travel-ball-2026' ? '/images/neworg.jpg' : '/images/flyer.jpg'
   const registrationImageAlt = formData.camp === 'travel-ball-2026' ? 'Travel Ball registration image' : 'Registration flyer'
 
@@ -447,7 +459,7 @@ export default function Registration({ registrationType = 'camp' }) {
             </div>
 
             <div className="payment-plan-grid" role="radiogroup" aria-label="Payment options">
-              {paymentPlans.map((plan) => (
+              {activePaymentPlans.map((plan) => (
                 <label key={plan.value} className={`payment-plan-card ${selectedPlan === plan.value ? 'selected' : ''}`}>
                   <input
                     type="radio"
