@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Replace the UID in the ADMIN_UIDS array with your admin account UID(s).
+    // You can find an admin UID in the Firebase Console (Authentication) after creating the account.
+    function isAdmin() {
+      return request.auth != null && request.auth.uid in ['REPLACE_WITH_ADMIN_UID']
+    }
+
+    // Basic validation for incoming registration documents created from the client.
+    function isValidRegistration(data) {
+      return data.keys().hasAll(['firstName', 'lastName', 'email', 'phone'])
+        && data.firstName is string
+        && data.lastName is string
+        && data.email is string
+        && data.phone is string
+        // optional fields type checks
+        && (!('dateOfBirth' in data) || data.dateOfBirth is string)
+        && (!('position' in data) || data.position is string)
+        && (!('experience' in data) || data.experience is string)
+        && (!('parentName' in data) || data.parentName is string)
+        && (!('parentPhone' in data) || data.parentPhone is string)
+        && (!('message' in data) || data.message is string)
+        && (!('paymentPlan' in data) || data.paymentPlan is string)
+        && (!('paymentAmount' in data) || data.paymentAmount is number)
+        && (!('paymentStatus' in data) || data.paymentStatus is string)
+    }
+
+    // Allow public creation of registrations (written by the web form). Do not allow updates/deletes by clients.
+    match /campRegistrations/{regId} {
+      allow create: if isValidRegistration(request.resource.data);
+      // Only admins can read, update, or delete registrations
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Deny everything else by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

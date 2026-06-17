@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { getAnalytics } from 'firebase/analytics'
 import { getFirestore } from 'firebase/firestore'
+import { getAuth } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -21,6 +22,7 @@ const hasRequiredConfig = Boolean(
 
 let db = null
 let analytics = null
+let auth = null
 
 if (hasRequiredConfig) {
   const app = initializeApp(firebaseConfig)
@@ -33,6 +35,22 @@ if (hasRequiredConfig) {
       analytics = null
     }
   }
+  try {
+    auth = getAuth(app)
+  } catch {
+    auth = null
+  }
 }
 
-export { db, analytics, hasRequiredConfig }
+if (!hasRequiredConfig) {
+  // Helpful debug output when env vars are missing or not loaded by Vite
+  // Do not log secret values — only indicate presence/absence.
+  // Restart the dev server after adding `.env.local` so Vite picks up the vars.
+  // eslint-disable-next-line no-console
+  console.warn('Firebase config incomplete. Set VITE_FIREBASE_* env vars and restart dev server.')
+} else {
+  // eslint-disable-next-line no-console
+  console.info('Firebase configuration loaded.')
+}
+
+export { db, analytics, hasRequiredConfig, auth }

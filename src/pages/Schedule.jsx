@@ -475,16 +475,51 @@ export default function Registration({ registrationType = 'camp' }) {
             </div>
 
             <p className="payment-disclaimer">
-              After clicking below, you will be taken to Venmo to complete payment.
+              After clicking below, you will be taken to Venmo to complete payment. Your registration will be saved first.
             </p>
 
             <a
-              className="submit-button venmo-button"
+              className={`submit-button venmo-button ${isSubmitting ? 'disabled' : ''}`}
               href="https://venmo.com/christina-brzezinski-5"
+              onClick={async (e) => {
+                e.preventDefault()
+                if (isSubmitting) return
+                setSubmitError('')
+
+                if (!hasRequiredConfig || !db) {
+                  setSubmitError('Firebase is not configured. Cannot save registration.')
+                  return
+                }
+
+                setIsSubmitting(true)
+                try {
+                  const registrationRef = await addDoc(collection(db, 'campRegistrations'), {
+                    ...formData,
+                    paymentPlan: selectedPlan,
+                    paymentAmount: selectedPlanDetails?.amount ?? 0,
+                    paymentStatus: 'venmo-pending',
+                    age: calculatedAge ? Number(calculatedAge) : null,
+                    createdAt: serverTimestamp(),
+                    source: 'website',
+                  })
+
+                  console.log('Registration saved (Venmo):', registrationRef.id)
+                  setSubmitted(true)
+                  // open Venmo in new tab
+                  window.open(e.currentTarget.href, '_blank', 'noopener')
+                  resetForm()
+                } catch (err) {
+                  console.error(err)
+                  setSubmitError('We could not save your registration. Please try again.')
+                } finally {
+                  setIsSubmitting(false)
+                }
+              }}
               target="_blank"
               rel="noopener noreferrer"
+              aria-disabled={isSubmitting}
             >
-              Pay through Venmo
+              {isSubmitting ? 'Saving...' : 'Pay through Venmo'}
             </a>
             
             {submitted && (

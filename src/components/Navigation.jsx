@@ -75,6 +75,7 @@ export default function Navigation() {
           </div>
           <Link to="/about" className="nav-link" onClick={closeMenu}>About Us</Link>
           <Link to="/contact" className="nav-link" onClick={closeMenu}>Contact</Link>
+          <Link to="/admin" className="nav-link" onClick={closeMenu}>Admin</Link>
         </div>
       </div>
     </nav>

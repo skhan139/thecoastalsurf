@@ -8,6 +8,7 @@ import TravelBallRegistration from './pages/TravelBallRegistration'
 import ClinicRegistration from './pages/ClinicRegistration'
 import AboutUs from './pages/AboutUs'
 import Contact from './pages/Contact'
+import Admin from './pages/Admin'
 import './App.css'
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
             <Route path="/travel-ball-registration" element={<TravelBallRegistration />} />
             <Route path="/clinic-registration" element={<ClinicRegistration />} />
             <Route path="/travel-ball" element={<TravelBall />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/contact" element={<Contact />} />
           </Routes>
