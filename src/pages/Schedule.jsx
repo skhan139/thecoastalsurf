@@ -475,12 +475,17 @@ export default function Registration({ registrationType = 'camp' }) {
             </div>
 
             <p className="payment-disclaimer">
-              After clicking below, you will be redirected to secure card checkout to complete payment.
+              After clicking below, you will be taken to Venmo to complete payment.
             </p>
 
-            <button type="submit" className="submit-button" disabled={isSubmitting}>
-              {isSubmitting ? 'Preparing Secure Checkout...' : 'Continue to Card Payment'}
-            </button>
+            <a
+              className="submit-button venmo-button"
+              href="https://venmo.com/christina-brzezinski-5"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Pay through Venmo
+            </a>
             
             {submitted && (
               <div className="success-message">
