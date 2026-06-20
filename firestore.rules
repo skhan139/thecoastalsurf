@@ -39,10 +39,13 @@ service cloud.firestore {
     match /campRegistrations/{regId} {
       allow create: if isValidRegistration(request.resource.data);
 
-      // Only admins can read, update, or delete registrations.
-      // Replace ADMIN_UIDS above with your admin UID(s) so the admin
-      // user(s) can read this collection via the client.
-      allow read, update, delete: if isAdmin();
+      // Allow any authenticated user to read registrations.
+      // Allow authenticated users to update only payment fields (paid status/amount).
+      allow read: if request.auth != null;
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus', 'paymentAmount']);
+      // Deletes remain admin-only.
+      allow delete: if isAdmin();
 
       // If you'd prefer to allow any authenticated user to read
       // registrations temporarily (NOT recommended for production),

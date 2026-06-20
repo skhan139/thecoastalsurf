@@ -1,11 +1,46 @@
 import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import './Home.css'
 
 export default function Home() {
+  const [showWave, setShowWave] = useState(false)
+  const [showIntro, setShowIntro] = useState(false)
+
+  useEffect(() => {
+    try {
+      const seen = window.localStorage.getItem('coastal_seen_wave')
+      if (!seen) {
+        setShowWave(true)
+        // mark seen so animation only plays once per browser
+        window.localStorage.setItem('coastal_seen_wave', '1')
+      }
+    } catch (e) {
+      // localStorage may be unavailable; still show wave
+      setShowWave(true)
+    }
+    try {
+      const introSeen = window.localStorage.getItem('coastal_seen_intro')
+      if (!introSeen) {
+        setShowIntro(true)
+        window.localStorage.setItem('coastal_seen_intro', '1')
+      }
+    } catch (e) {
+      setShowIntro(true)
+    }
+  }, [])
+
   return (
-    <div className="home">
+    <div className={`home ${showIntro ? 'home-intro' : ''}`}>
       {/* Hero Section */}
       <section className="hero">
+        {showWave && (
+          <div className="hero-wave" aria-hidden="true">
+            <svg viewBox="0 0 1440 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path className="wave-path" d="M0,160 C120,200 300,120 480,140 C660,160 840,220 1020,200 C1200,180 1320,120 1440,140 L1440 220 L0 220 Z" fill="rgba(255,255,255,0.12)" />
+              <path className="wave-path soft" d="M0,180 C140,140 320,200 480,180 C640,160 840,120 1000,140 C1160,160 1320,200 1440,180 L1440 220 L0 220 Z" fill="rgba(255,255,255,0.06)" />
+            </svg>
+          </div>
+        )}
         <div className="hero-layout">
           <div className="hero-image-wrap">
             <img src="/images/neworg.jpg" alt="The Coastal Surf organization" className="hero-image" />

@@ -5,20 +5,28 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  updateProfile,
 } from 'firebase/auth'
-import { collection, getDocs, query, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, getDocs, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore'
 import './Registration.css'
 
 export default function Admin() {
   const [user, setUser] = useState(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [adminName, setAdminName] = useState('')
   const [creating, setCreating] = useState(false)
   const [message, setMessage] = useState('')
   const [registrations, setRegistrations] = useState([])
   const [loading, setLoading] = useState(false)
   const [minAge, setMinAge] = useState('')
   const [maxAge, setMaxAge] = useState('')
+  const [campQuery, setCampQuery] = useState('')
+  const [campAge, setCampAge] = useState('')
+  const [travelQuery, setTravelQuery] = useState('')
+  const [travelAge, setTravelAge] = useState('')
+  const [clinicQuery, setClinicQuery] = useState('')
+  const [clinicAge, setClinicAge] = useState('')
 
   useEffect(() => {
     if (!auth) return
@@ -77,6 +85,8 @@ export default function Admin() {
             parentPhone: data.parentPhone || '',
             message: data.message || '',
             age: data.age ?? null,
+              paymentStatus: data.paymentStatus || '',
+              paymentAmount: data.paymentAmount ?? null,
             paymentPlan: data.paymentPlan || '',
             createdAt: createdAtISO,
           }
@@ -133,6 +143,8 @@ export default function Admin() {
           parentPhone: data.parentPhone || '',
           message: data.message || '',
           age: data.age ?? null,
+          paymentStatus: data.paymentStatus || '',
+          paymentAmount: data.paymentAmount ?? null,
           paymentPlan: data.paymentPlan || '',
           createdAt: createdAtISO,
         }
@@ -156,10 +168,19 @@ export default function Admin() {
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password)
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      // If a name was provided, save it to the user's profile
+      if (adminName && userCredential?.user) {
+        try {
+          await updateProfile(userCredential.user, { displayName: adminName })
+        } catch (upErr) {
+          console.error('Failed to update profile name', upErr)
+        }
+      }
       setMessage('Account created — you are now signed in.')
       setEmail('')
       setPassword('')
+      setAdminName('')
     } catch (err) {
       console.error(err)
       setMessage(err.message || 'Could not create account.')
@@ -179,6 +200,7 @@ export default function Admin() {
       setMessage('Signed in.')
       setEmail('')
       setPassword('')
+      setAdminName('')
     } catch (err) {
       console.error(err)
       setMessage(err.message || 'Could not sign in.')
@@ -193,6 +215,27 @@ export default function Admin() {
     } catch (err) {
       console.error(err)
       setMessage('Could not sign out.')
+    }
+  }
+
+  const togglePaid = async (regId, currentStatus) => {
+    const nextStatus = currentStatus === 'paid' ? 'unpaid' : 'paid'
+    // Optimistic update
+    setRegistrations((prev) => prev.map((r) => (r.id === regId ? { ...r, paymentStatus: nextStatus } : r)))
+
+    if (!db) {
+      setMessage('Database not configured.')
+      return
+    }
+
+    try {
+      await updateDoc(doc(db, 'campRegistrations', regId), { paymentStatus: nextStatus })
+      setMessage('')
+    } catch (err) {
+      console.error('Failed to update payment status', err)
+      setMessage('Could not update payment status.')
+      // Revert on failure
+      setRegistrations((prev) => prev.map((r) => (r.id === regId ? { ...r, paymentStatus: currentStatus } : r)))
     }
   }
 
@@ -218,7 +261,17 @@ export default function Admin() {
       <div key={r.id} className="info-card" style={{ padding: '12px', borderRadius: '6px', border: '1px solid #ddd' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
           <strong>{r.firstName} {r.lastName}</strong>
-          <span>{r.camp || '-'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>{r.camp || '-'}</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
+              <input
+                type="checkbox"
+                checked={r.paymentStatus === 'paid'}
+                onChange={() => togglePaid(r.id, r.paymentStatus)}
+              />
+              Paid
+            </label>
+          </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
           <div><strong>Email:</strong> {r.email || '-'}</div>
@@ -251,6 +304,12 @@ export default function Admin() {
             <div className="auth-card">
               <h2>{creating ? 'Create Admin Account' : 'Admin Sign In'}</h2>
               <form onSubmit={creating ? handleCreate : handleLogin}>
+                {creating && (
+                  <div className="form-group">
+                    <label>Name</label>
+                    <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} />
+                  </div>
+                )}
                 <div className="form-group">
                   <label>Email</label>
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -266,7 +325,7 @@ export default function Admin() {
                   <button
                     type="button"
                     className="submit-button"
-                    onClick={() => setCreating((c) => !c)}
+                    onClick={() => setCreating((c) => { const next = !c; if (!next) setAdminName(''); return next })}
                   >
                     {creating ? 'Switch to Sign In' : 'Create Account'}
                   </button>
@@ -281,7 +340,10 @@ export default function Admin() {
               <div style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ flex: '1 1 320px' }}>
                   <div className="form-row" style={{ alignItems: 'center', marginBottom: '1rem' }}>
-                    <div>Signed in as <strong>{user.email}</strong></div>
+                    <div>
+                      Signed in as <strong>{user.email}</strong>
+                      {user.displayName && <span> — {user.displayName}</span>}
+                    </div>
                   </div>
 
                   <div className="form-row" style={{ gap: '8px', marginBottom: '12px' }}>
@@ -293,7 +355,7 @@ export default function Admin() {
                       Max age:
                       <input type="number" min="0" value={maxAge} onChange={(e) => setMaxAge(e.target.value)} />
                     </label>
-                    <button className="submit-button" onClick={() => { setMinAge(''); setMaxAge('') }}>Clear</button>
+                    <button className="submit-button inline" onClick={() => { setMinAge(''); setMaxAge('') }}>Clear</button>
                   </div>
 
                   {loading && <p>Loading registrations...</p>}
@@ -301,20 +363,86 @@ export default function Admin() {
 
                 <div style={{ flex: '2 1 600px' }}>
                   <h3 style={{ marginTop: 0 }}>Registered Players</h3>
-                  <div style={{ display: 'grid', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
                     <div>
-                      <h4 style={{ margin: '6px 0' }}>Camp Registrations</h4>
-                      <div style={{ display: 'grid', gap: '12px' }}>{renderCards(campRegs)}</div>
+                        <h4 style={{ margin: '6px 0' }}>Camp Registrations</h4>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                          <input
+                            placeholder="Search name"
+                            value={campQuery}
+                            onChange={(e) => setCampQuery(e.target.value)}
+                            style={{ padding: '6px', flex: '1 1 160px' }}
+                          />
+                          <input
+                            type="number"
+                            placeholder="Age"
+                            value={campAge}
+                            onChange={(e) => setCampAge(e.target.value)}
+                            style={{ width: '80px', padding: '6px' }}
+                          />
+                          <button className="submit-button inline" onClick={() => { setCampQuery(''); setCampAge('') }}>Clear</button>
+                        </div>
+                        <div style={{ display: 'grid', gap: '12px' }}>{renderCards(campRegs.filter((r) => {
+                          const q = campQuery.trim().toLowerCase()
+                          const full = `${r.firstName} ${r.lastName}`.toLowerCase()
+                          const nameMatch = !q || full.includes(q)
+                          const ageMatch = !campAge || (typeof r.age === 'number' && r.age === Number(campAge))
+                          return nameMatch && ageMatch
+                        }))}</div>
                     </div>
 
                     <div>
                       <h4 style={{ margin: '6px 0' }}>Travel Ball Registrations</h4>
-                      <div style={{ display: 'grid', gap: '12px' }}>{renderCards(travelRegs)}</div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                        <input
+                          placeholder="Search name"
+                          value={travelQuery}
+                          onChange={(e) => setTravelQuery(e.target.value)}
+                          style={{ padding: '6px', flex: '1 1 160px' }}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Age"
+                          value={travelAge}
+                          onChange={(e) => setTravelAge(e.target.value)}
+                          style={{ width: '80px', padding: '6px' }}
+                        />
+                        <button className="submit-button inline" onClick={() => { setTravelQuery(''); setTravelAge('') }}>Clear</button>
+                      </div>
+                      <div style={{ display: 'grid', gap: '12px' }}>{renderCards(travelRegs.filter((r) => {
+                        const q = travelQuery.trim().toLowerCase()
+                        const full = `${r.firstName} ${r.lastName}`.toLowerCase()
+                        const nameMatch = !q || full.includes(q)
+                        const ageMatch = !travelAge || (typeof r.age === 'number' && r.age === Number(travelAge))
+                        return nameMatch && ageMatch
+                      }))}</div>
                     </div>
 
                     <div>
                       <h4 style={{ margin: '6px 0' }}>Clinic Registrations</h4>
-                      <div style={{ display: 'grid', gap: '12px' }}>{renderCards(clinicRegs)}</div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                        <input
+                          placeholder="Search name"
+                          value={clinicQuery}
+                          onChange={(e) => setClinicQuery(e.target.value)}
+                          style={{ padding: '6px', flex: '1 1 160px' }}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Age"
+                          value={clinicAge}
+                          onChange={(e) => setClinicAge(e.target.value)}
+                          style={{ width: '80px', padding: '6px' }}
+                        />
+                        <button className="submit-button inline" onClick={() => { setClinicQuery(''); setClinicAge('') }}>Clear</button>
+                      </div>
+                      <div style={{ display: 'grid', gap: '12px' }}>{renderCards(clinicRegs.filter((r) => {
+                        const q = clinicQuery.trim().toLowerCase()
+                        const full = `${r.firstName} ${r.lastName}`.toLowerCase()
+                        const nameMatch = !q || full.includes(q)
+                        const ageMatch = !clinicAge || (typeof r.age === 'number' && r.age === Number(clinicAge))
+                        return nameMatch && ageMatch
+                      }))}</div>
                     </div>
                   </div>
                 </div>
