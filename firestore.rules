@@ -3,8 +3,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Replace the UID in the ADMIN_UIDS array with your admin account UID(s).
-    // You can find an admin UID in the Firebase Console (Authentication) after creating the account.
+    // ADMIN UIDs: replace the placeholder values with the UID(s) of
+    // your admin account(s). You can find a user's UID in the
+    // Firebase Console → Authentication after creating/signing in.
+    // Example: ['uid1Example', 'uid2Example']
+    // IMPORTANT: do not commit real UIDs to public repos if this
+    // repository is public.
+    // NOTE: Firestore rules do not support top-level `let` declarations,
+    // so we keep the UID list inline inside the `isAdmin()` function.
     function isAdmin() {
       return request.auth != null && request.auth.uid in ['REPLACE_WITH_ADMIN_UID']
     }
@@ -28,11 +34,20 @@ service cloud.firestore {
         && (!('paymentStatus' in data) || data.paymentStatus is string)
     }
 
-    // Allow public creation of registrations (written by the web form). Do not allow updates/deletes by clients.
+    // Allow public creation of registrations (written by the web form).
+    // Do not allow updates/deletes by clients.
     match /campRegistrations/{regId} {
       allow create: if isValidRegistration(request.resource.data);
-      // Only admins can read, update, or delete registrations
+
+      // Only admins can read, update, or delete registrations.
+      // Replace ADMIN_UIDS above with your admin UID(s) so the admin
+      // user(s) can read this collection via the client.
       allow read, update, delete: if isAdmin();
+
+      // If you'd prefer to allow any authenticated user to read
+      // registrations temporarily (NOT recommended for production),
+      // replace the `allow read` line above with:
+      //   allow read: if request.auth != null;
     }
 
     // Deny everything else by default.

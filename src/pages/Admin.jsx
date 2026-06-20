@@ -24,12 +24,21 @@ export default function Admin() {
     if (!auth) return
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
+      if (u) {
+        console.log('Admin signed in:', { uid: u.uid, email: u.email })
+      } else {
+        console.log('Admin signed out')
+      }
     })
     return unsub
   }, [])
 
   useEffect(() => {
+    // Only attach realtime listener when a signed-in admin user
+    // exists and Firestore is configured. This avoids permission
+    // errors for unauthenticated visitors.
     if (!user) return
+    if (!hasRequiredConfig || !db) return
 
     setLoading(true)
     const q = query(collection(db, 'campRegistrations'), orderBy('createdAt', 'desc'))
@@ -38,6 +47,22 @@ export default function Admin() {
       (snap) => {
         const items = snap.docs.map((doc) => {
           const data = doc.data() || {}
+
+          // Normalize createdAt to an ISO string whether it's a
+          // Firestore Timestamp, a server-generated object, or
+          // already a string.
+          const rawCreated = data.createdAt
+          let createdAtISO = ''
+          if (rawCreated) {
+            if (typeof rawCreated.toDate === 'function') {
+              createdAtISO = rawCreated.toDate().toISOString()
+            } else if (typeof rawCreated.toMillis === 'function') {
+              createdAtISO = new Date(rawCreated.toMillis()).toISOString()
+            } else if (typeof rawCreated === 'string') {
+              createdAtISO = rawCreated
+            }
+          }
+
           return {
             id: doc.id,
             camp: data.camp || '',
@@ -53,7 +78,7 @@ export default function Admin() {
             message: data.message || '',
             age: data.age ?? null,
             paymentPlan: data.paymentPlan || '',
-            createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : '',
+            createdAt: createdAtISO,
           }
         })
         setRegistrations(items)
@@ -81,6 +106,19 @@ export default function Admin() {
       const snap = await getDocs(q)
       const items = snap.docs.map((doc) => {
         const data = doc.data() || {}
+
+        const rawCreated = data.createdAt
+        let createdAtISO = ''
+        if (rawCreated) {
+          if (typeof rawCreated.toDate === 'function') {
+            createdAtISO = rawCreated.toDate().toISOString()
+          } else if (typeof rawCreated.toMillis === 'function') {
+            createdAtISO = new Date(rawCreated.toMillis()).toISOString()
+          } else if (typeof rawCreated === 'string') {
+            createdAtISO = rawCreated
+          }
+        }
+
         return {
           id: doc.id,
           camp: data.camp || '',
@@ -96,7 +134,7 @@ export default function Admin() {
           message: data.message || '',
           age: data.age ?? null,
           paymentPlan: data.paymentPlan || '',
-          createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : '',
+          createdAt: createdAtISO,
         }
       })
       setRegistrations(items)
@@ -165,6 +203,41 @@ export default function Admin() {
     return true
   })
 
+  const CAMP_ID = 'summer-camp-2026'
+  const TRAVEL_ID = 'travel-ball-2026'
+  const CLINIC_ID = 'skills-clinic-2026'
+
+  const campRegs = filtered.filter((r) => r.camp === CAMP_ID)
+  const travelRegs = filtered.filter((r) => r.camp === TRAVEL_ID)
+  const clinicRegs = filtered.filter((r) => r.camp === CLINIC_ID)
+
+  const renderCards = (items) => {
+    if (!items || items.length === 0) return <div className="info-card">No registrations found.</div>
+
+    return items.map((r) => (
+      <div key={r.id} className="info-card" style={{ padding: '12px', borderRadius: '6px', border: '1px solid #ddd' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <strong>{r.firstName} {r.lastName}</strong>
+          <span>{r.camp || '-'}</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+          <div><strong>Email:</strong> {r.email || '-'}</div>
+          <div><strong>Phone:</strong> {r.phone || '-'}</div>
+          <div><strong>DOB:</strong> {r.dateOfBirth || '-'}</div>
+          <div><strong>Age:</strong> {r.age ?? '-'}</div>
+          <div><strong>Position:</strong> {r.position || '-'}</div>
+          <div><strong>Experience:</strong> {r.experience || '-'}</div>
+          <div><strong>Parent:</strong> {r.parentName || '-'}</div>
+          <div><strong>Parent Phone:</strong> {r.parentPhone || '-'}</div>
+          <div style={{ gridColumn: '1 / -1' }}><strong>Additional Info:</strong> {r.message || '-'}</div>
+          <div style={{ gridColumn: '1 / -1', marginTop: '6px', fontSize: '0.9em', color: '#666' }}>
+            <strong>Plan:</strong> {r.paymentPlan || '-'} &nbsp; • &nbsp; <strong>Registered:</strong> {r.createdAt ? new Date(r.createdAt).toLocaleString() : '-'}
+          </div>
+        </div>
+      </div>
+    ))
+  }
+
   return (
     <div className="registration-page">
       <div className="page-header">
@@ -229,31 +302,20 @@ export default function Admin() {
                 <div style={{ flex: '2 1 600px' }}>
                   <h3 style={{ marginTop: 0 }}>Registered Players</h3>
                   <div style={{ display: 'grid', gap: '12px' }}>
-                    {filtered.map((r) => (
-                      <div key={r.id} className="info-card" style={{ padding: '12px', borderRadius: '6px', border: '1px solid #ddd' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <strong>{r.firstName} {r.lastName}</strong>
-                          <span>{r.camp || '-'}</span>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                          <div><strong>Email:</strong> {r.email || '-'}</div>
-                          <div><strong>Phone:</strong> {r.phone || '-'}</div>
-                          <div><strong>DOB:</strong> {r.dateOfBirth || '-'}</div>
-                          <div><strong>Age:</strong> {r.age ?? '-'}</div>
-                          <div><strong>Position:</strong> {r.position || '-'}</div>
-                          <div><strong>Experience:</strong> {r.experience || '-'}</div>
-                          <div><strong>Parent:</strong> {r.parentName || '-'}</div>
-                          <div><strong>Parent Phone:</strong> {r.parentPhone || '-'}</div>
-                          <div style={{ gridColumn: '1 / -1' }}><strong>Additional Info:</strong> {r.message || '-'}</div>
-                          <div style={{ gridColumn: '1 / -1', marginTop: '6px', fontSize: '0.9em', color: '#666' }}>
-                            <strong>Plan:</strong> {r.paymentPlan || '-'} &nbsp; • &nbsp; <strong>Registered:</strong> {r.createdAt ? new Date(r.createdAt).toLocaleString() : '-'}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {filtered.length === 0 && (
-                      <div className="info-card">No registrations found for the current filter.</div>
-                    )}
+                    <div>
+                      <h4 style={{ margin: '6px 0' }}>Camp Registrations</h4>
+                      <div style={{ display: 'grid', gap: '12px' }}>{renderCards(campRegs)}</div>
+                    </div>
+
+                    <div>
+                      <h4 style={{ margin: '6px 0' }}>Travel Ball Registrations</h4>
+                      <div style={{ display: 'grid', gap: '12px' }}>{renderCards(travelRegs)}</div>
+                    </div>
+
+                    <div>
+                      <h4 style={{ margin: '6px 0' }}>Clinic Registrations</h4>
+                      <div style={{ display: 'grid', gap: '12px' }}>{renderCards(clinicRegs)}</div>
+                    </div>
                   </div>
                 </div>
               </div>

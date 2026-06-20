@@ -492,6 +492,7 @@ export default function Registration({ registrationType = 'camp' }) {
                 }
 
                 setIsSubmitting(true)
+                const href = e.currentTarget?.href
                 try {
                   const registrationRef = await addDoc(collection(db, 'campRegistrations'), {
                     ...formData,
@@ -505,8 +506,8 @@ export default function Registration({ registrationType = 'camp' }) {
 
                   console.log('Registration saved (Venmo):', registrationRef.id)
                   setSubmitted(true)
-                  // open Venmo in new tab
-                  window.open(e.currentTarget.href, '_blank', 'noopener')
+                  // open Venmo in new tab (use captured href to avoid synthetic event pooling)
+                  if (href) window.open(href, '_blank', 'noopener')
                   resetForm()
                 } catch (err) {
                   console.error(err)
