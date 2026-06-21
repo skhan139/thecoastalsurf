@@ -1,162 +1,147 @@
 # The Coastal Surf - Travel Baseball Program Website
 
 A modern, responsive React website for The Coastal Surf travel baseball program, featuring a teal and black color scheme.
+# The Coastal Surf — Travel Baseball Website
 
-## Features
+This repository is a Vite + React site for the Coastal Surf travel baseball program. It provides public pages, camp/clinic/travel registration, a payments integration flow, and an Admin UI for managing registrations.
 
-- **Home Page**: Eye-catching hero section with program information and features showcase
-- **Team Page**: Display of coaching staff and player roster
-- **Schedule Page**: Upcoming games and results with location and time details
-- **Contact Page**: Contact information and message form for inquiries
-- **Responsive Design**: Fully mobile-optimized layout
+---
 
-## Project Structure
+## Highlights / Features
+
+- Public pages: Home, Travel Ball, About, Contact, and registration forms for Camp / Travel Ball / Clinic.
+- Admin interface (`/admin`) to view and manage registrations:
+	- Realtime and manual fetch of registrations from Firestore.
+	- Per-section search (name + age) and global min/max age filters.
+	- Pagination (5 players per page) with Prev/Next controls.
+	- Mark payments via a "Paid" checkbox — saves to Firestore and persists.
+	- Create admin account (saves display name) and sign in.
+- Modernized form styling and focus states (in `src/pages/Registration.css`).
+- Home hero additions: one-time wave SVG overlay and one-time homepage fade-in animation for first visits.
+
+---
+
+## Project Structure (important files)
 
 ```
 src/
-├── components/
-│   ├── Navigation.jsx
-│   ├── Navigation.css
-│   ├── Footer.jsx
-│   └── Footer.css
-├── pages/
-│   ├── Home.jsx
-│   ├── Home.css
-│   ├── Team.jsx
-│   ├── Team.css
-│   ├── Schedule.jsx
-│   ├── Schedule.css
-│   ├── Contact.jsx
-│   └── Contact.css
-├── App.jsx
-├── App.css
-├── main.jsx
-├── index.css
-└── index.html
+├─ components/
+│  ├─ Navigation.jsx
+│  └─ Footer.jsx
+├─ pages/
+│  ├─ Home.jsx (+Home.css)
+│  ├─ Admin.jsx (+Registration.css)
+│  ├─ CampRegistration.jsx
+│  ├─ TravelBallRegistration.jsx
+│  └─ ClinicRegistration.jsx
+├─ App.jsx
+├─ main.jsx
+└─ firebase.js
+
+firestore.rules
+package.json
+vite.config.js
+README.md
 ```
 
-## Getting Started
+Key places to look:
+- `src/pages/Admin.jsx` — admin logic (search, pagination, paid toggle, auth flows).
+- `firestore.rules` — Firestore security rules (reads/updates/deletes control).
+- `src/pages/Registration.css` — stylings for the admin and registration forms.
 
-### Prerequisites
+---
 
-- Node.js 16+ and npm
+## Firebase / Firestore notes
 
-### Installation
+- The app expects Firebase initialization in `src/firebase.js` using environment variables (prefixed with `VITE_`).
+- Current Firestore rules (in `firestore.rules`):
+	- Public creation of `campRegistrations` is allowed with validation.
+	- Authenticated users may read registrations.
+	- Authenticated users may update only `paymentStatus` and `paymentAmount` (prevents arbitrary updates).
+	- Deletes remain admin-only.
 
-1. Install dependencies:
+To deploy the rules:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+Security options you may prefer in future:
+- Use an `admins` collection and check `exists()` in rules.
+- Use custom claims (Admin SDK) and check `request.auth.token.admin` in rules.
+
+---
+
+## Development / Run locally
+
+1. Install packages:
+
 ```bash
 npm install
 ```
 
-2. Start the development server:
+2. Dev server:
+
 ```bash
 npm run dev
 ```
 
-The website will be available at `http://localhost:5173`
-
-### Build for Production
+3. Build for production:
 
 ```bash
 npm run build
 ```
 
-This creates an optimized production build in the `dist/` folder.
-
-### Preview Production Build
+4. Preview production build locally:
 
 ```bash
 npm run preview
 ```
 
-## Color Scheme
+---
 
-- **Primary Teal**: `#008B8B`
-- **Light Teal**: `#20B2AA`
-- **Black**: `#1a1a1a`
-- **Black Light**: `#2d2d2d`
-- **White**: `#ffffff`
+## Environment variables
 
-## Technologies Used
+Create a `.env` (or set env vars in Vercel) with:
 
-- **React**: UI framework
-- **React Router**: Client-side routing
-- **Vite**: Build tool and dev server
-- **CSS**: Custom styling with CSS variables
+```
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+VITE_PAYMENTS_API_URL=...   # backend payments endpoint (if used)
+```
 
-## Customization
+---
 
-### Update Team Information
+## Deployment (Vercel)
 
-Edit `src/pages/Team.jsx` to add your real players and coaches.
+- Recommended build command: `npm run build` (Vite defaults). Output directory: `dist`.
+- If you see missing hashed assets on Vercel (404 for `index-<hash>.css`), check:
+	- Build logs to ensure the build completed and assets uploaded.
+	- Vercel CDN/cache — try redeploy or purge cache.
+	- `vite.config.js` `base` setting if hosting under a subpath.
 
-### Update Schedule
+---
 
-Modify the `games` array in `src/pages/Schedule.jsx` with your actual schedule.
+## Recent/Notable Changes
 
-### Update Contact Information
+- Admin page: per-section search, pagination, paid checkbox (Firestore updates), display name saved on account creation.
+- Styles: modernized inputs and `.submit-button.inline` variant for inline controls.
+- Home: one-time wave overlay and homepage fade-in on first visit (`localStorage` keys: `coastal_seen_wave`, `coastal_seen_intro`).
+- Firestore rules updated to allow authenticated updates to payment fields only.
 
-Edit the contact details in `src/pages/Contact.jsx` and `src/components/Footer.jsx`.
+---
 
-### Modify Colors
+## Next suggestions
 
-Update the CSS variables in `src/index.css` under the `:root` selector to change the color scheme.
+- Switch `paymentStatus` to a boolean `paid` for simpler logic and rules (I can refactor this).
+- For large registration counts implement server-side pagination using Firestore `limit` + `startAfter`.
+- Consider admin management via an `admins` collection or custom claims for better access control.
 
-## Future Enhancements
+---
 
-- Add player profiles with photos and statistics
-- Integrate with a backend for dynamic game scores
-- Add photo gallery for tournaments
-- Implement email functionality for contact form
-- Add team news/blog section
-- Tournament history and achievements
+If you'd like, I can also add a short `DEPLOY.md` with Vercel steps or convert payment status to a boolean across code + rules.
 
-## Camp Registration + Card Payments
-
-The camp registration form stores athlete/parent details in Firestore and then redirects to secure Stripe Checkout for card payment.
-
-### 1) Configure environment variables
-
-Copy `.env.example` to `.env` and set:
-
-- `VITE_FIREBASE_*` values for your Firebase project
-- `VITE_PAYMENTS_API_URL` (for local dev: `http://localhost:4242`)
-- `STRIPE_SECRET_KEY` for your Stripe account (server-side only)
-- `FRONTEND_ORIGIN` (for local dev: `http://localhost:5173`)
-
-### 2) Start the apps
-
-- Frontend: `npm run dev`
-- Payments API: `npm run payments:dev`
-
-### 3) Stripe webhook (recommended for production)
-
-Use a webhook to update Firestore `paymentStatus` to `paid` after successful checkout.
-Current form writes registrations as `paymentStatus: "pending"` before redirecting to checkout.
-
-## Deploying to Vercel
-
-This project is configured for Vercel with SPA routing support via [vercel.json](vercel.json).
-
-### Required Vercel Environment Variables
-
-Set these in Vercel Project Settings → Environment Variables:
-
-- `VITE_FIREBASE_API_KEY`
-- `VITE_FIREBASE_AUTH_DOMAIN`
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_FIREBASE_STORAGE_BUCKET`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID`
-- `VITE_FIREBASE_APP_ID`
-- `VITE_FIREBASE_MEASUREMENT_ID`
-- `VITE_PAYMENTS_API_URL` (point this to your deployed payments API URL)
-
-### Notes
-
-- Build command: `npm run build`
-- Output directory: `dist`
-- If routes like `/camp-registration` fail on refresh, redeploy after committing `vercel.json`.
-
-## License
-
-MIT License - Feel free to use this project for your travel baseball program.

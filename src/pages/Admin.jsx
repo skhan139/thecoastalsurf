@@ -27,6 +27,10 @@ export default function Admin() {
   const [travelAge, setTravelAge] = useState('')
   const [clinicQuery, setClinicQuery] = useState('')
   const [clinicAge, setClinicAge] = useState('')
+  const PAGE_SIZE = 5
+  const [campPage, setCampPage] = useState(0)
+  const [travelPage, setTravelPage] = useState(0)
+  const [clinicPage, setClinicPage] = useState(0)
 
   useEffect(() => {
     if (!auth) return
@@ -254,6 +258,11 @@ export default function Admin() {
   const travelRegs = filtered.filter((r) => r.camp === TRAVEL_ID)
   const clinicRegs = filtered.filter((r) => r.camp === CLINIC_ID)
 
+  // Reset pages when filters/search change or when lists update
+  useEffect(() => setCampPage(0), [campQuery, campAge, campRegs])
+  useEffect(() => setTravelPage(0), [travelQuery, travelAge, travelRegs])
+  useEffect(() => setClinicPage(0), [clinicQuery, clinicAge, clinicRegs])
+
   const renderCards = (items) => {
     if (!items || items.length === 0) return <div className="info-card">No registrations found.</div>
 
@@ -382,13 +391,33 @@ export default function Admin() {
                           />
                           <button className="submit-button inline" onClick={() => { setCampQuery(''); setCampAge('') }}>Clear</button>
                         </div>
-                        <div style={{ display: 'grid', gap: '12px' }}>{renderCards(campRegs.filter((r) => {
-                          const q = campQuery.trim().toLowerCase()
-                          const full = `${r.firstName} ${r.lastName}`.toLowerCase()
-                          const nameMatch = !q || full.includes(q)
-                          const ageMatch = !campAge || (typeof r.age === 'number' && r.age === Number(campAge))
-                          return nameMatch && ageMatch
-                        }))}</div>
+                        {
+                          (() => {
+                            const list = campRegs.filter((r) => {
+                              const q = campQuery.trim().toLowerCase()
+                              const full = `${r.firstName} ${r.lastName}`.toLowerCase()
+                              const nameMatch = !q || full.includes(q)
+                              const ageMatch = !campAge || (typeof r.age === 'number' && r.age === Number(campAge))
+                              return nameMatch && ageMatch
+                            })
+                            const total = list.length
+                            const pages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+                            const start = campPage * PAGE_SIZE
+                            const pageItems = list.slice(start, start + PAGE_SIZE)
+                            return (
+                              <div>
+                                <div style={{ display: 'grid', gap: '12px' }}>{renderCards(pageItems)}</div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                                  <div style={{ fontSize: '0.9rem', color: '#666' }}>Showing {Math.min(start+1, total)}-{Math.min(start+pageItems.length, total)} of {total}</div>
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button className="submit-button inline" disabled={campPage === 0} onClick={() => setCampPage((p) => Math.max(0, p-1))}>Prev</button>
+                                    <button className="submit-button inline" disabled={campPage >= pages-1} onClick={() => setCampPage((p) => Math.min(p+1, pages-1))}>Next</button>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })()
+                        }
                     </div>
 
                     <div>
@@ -409,13 +438,33 @@ export default function Admin() {
                         />
                         <button className="submit-button inline" onClick={() => { setTravelQuery(''); setTravelAge('') }}>Clear</button>
                       </div>
-                      <div style={{ display: 'grid', gap: '12px' }}>{renderCards(travelRegs.filter((r) => {
-                        const q = travelQuery.trim().toLowerCase()
-                        const full = `${r.firstName} ${r.lastName}`.toLowerCase()
-                        const nameMatch = !q || full.includes(q)
-                        const ageMatch = !travelAge || (typeof r.age === 'number' && r.age === Number(travelAge))
-                        return nameMatch && ageMatch
-                      }))}</div>
+                      {
+                        (() => {
+                          const list = travelRegs.filter((r) => {
+                            const q = travelQuery.trim().toLowerCase()
+                            const full = `${r.firstName} ${r.lastName}`.toLowerCase()
+                            const nameMatch = !q || full.includes(q)
+                            const ageMatch = !travelAge || (typeof r.age === 'number' && r.age === Number(travelAge))
+                            return nameMatch && ageMatch
+                          })
+                          const total = list.length
+                          const pages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+                          const start = travelPage * PAGE_SIZE
+                          const pageItems = list.slice(start, start + PAGE_SIZE)
+                          return (
+                            <div>
+                              <div style={{ display: 'grid', gap: '12px' }}>{renderCards(pageItems)}</div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                                <div style={{ fontSize: '0.9rem', color: '#666' }}>Showing {Math.min(start+1, total)}-{Math.min(start+pageItems.length, total)} of {total}</div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <button className="submit-button inline" disabled={travelPage === 0} onClick={() => setTravelPage((p) => Math.max(0, p-1))}>Prev</button>
+                                  <button className="submit-button inline" disabled={travelPage >= pages-1} onClick={() => setTravelPage((p) => Math.min(p+1, pages-1))}>Next</button>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })()
+                      }
                     </div>
 
                     <div>
@@ -436,13 +485,33 @@ export default function Admin() {
                         />
                         <button className="submit-button inline" onClick={() => { setClinicQuery(''); setClinicAge('') }}>Clear</button>
                       </div>
-                      <div style={{ display: 'grid', gap: '12px' }}>{renderCards(clinicRegs.filter((r) => {
-                        const q = clinicQuery.trim().toLowerCase()
-                        const full = `${r.firstName} ${r.lastName}`.toLowerCase()
-                        const nameMatch = !q || full.includes(q)
-                        const ageMatch = !clinicAge || (typeof r.age === 'number' && r.age === Number(clinicAge))
-                        return nameMatch && ageMatch
-                      }))}</div>
+                      {
+                        (() => {
+                          const list = clinicRegs.filter((r) => {
+                            const q = clinicQuery.trim().toLowerCase()
+                            const full = `${r.firstName} ${r.lastName}`.toLowerCase()
+                            const nameMatch = !q || full.includes(q)
+                            const ageMatch = !clinicAge || (typeof r.age === 'number' && r.age === Number(clinicAge))
+                            return nameMatch && ageMatch
+                          })
+                          const total = list.length
+                          const pages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+                          const start = clinicPage * PAGE_SIZE
+                          const pageItems = list.slice(start, start + PAGE_SIZE)
+                          return (
+                            <div>
+                              <div style={{ display: 'grid', gap: '12px' }}>{renderCards(pageItems)}</div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                                <div style={{ fontSize: '0.9rem', color: '#666' }}>Showing {Math.min(start+1, total)}-{Math.min(start+pageItems.length, total)} of {total}</div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <button className="submit-button inline" disabled={clinicPage === 0} onClick={() => setClinicPage((p) => Math.max(0, p-1))}>Prev</button>
+                                  <button className="submit-button inline" disabled={clinicPage >= pages-1} onClick={() => setClinicPage((p) => Math.min(p+1, pages-1))}>Next</button>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })()
+                      }
                     </div>
                   </div>
                 </div>
