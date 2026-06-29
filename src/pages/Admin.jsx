@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { auth, db, hasRequiredConfig } from '../firebase'
 import {
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
@@ -219,6 +220,27 @@ export default function Admin() {
     }
   }
 
+  const handlePasswordReset = async () => {
+    setMessage('')
+    if (!hasRequiredConfig || !auth) {
+      setMessage('Firebase Auth is not configured. Add Firebase keys to .env and restart the app.')
+      return
+    }
+
+    if (!email) {
+      setMessage('Enter your email address to receive a reset link.')
+      return
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email)
+      setMessage('Password reset email sent. Check your inbox.')
+    } catch (err) {
+      console.error(err)
+      setMessage(err.message || 'Could not send password reset email.')
+    }
+  }
+
   const handleLogout = async () => {
     try {
       await signOut(auth)
@@ -328,13 +350,13 @@ export default function Admin() {
                       <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} />
                     </div>
                     <div className="form-group">
-                      <label>Access Token</label>
+                      <label>Access Code</label>
                       <input
                         type="text"
                         value={accessCode}
                         onChange={(e) => setAccessCode(e.target.value)}
                         required
-                        placeholder="Enter access token"
+                        placeholder="Enter access code"
                       />
                     </div>
                   </>
@@ -351,6 +373,15 @@ export default function Admin() {
                   <button type="submit" className="submit-button">
                     {creating ? 'Create Account' : 'Sign In'}
                   </button>
+                  {!creating && (
+                    <button
+                      type="button"
+                      className="submit-button"
+                      onClick={handlePasswordReset}
+                    >
+                      Forgot Password
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="submit-button"
