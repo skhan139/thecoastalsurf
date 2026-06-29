@@ -15,6 +15,7 @@ export default function Admin() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [adminName, setAdminName] = useState('')
+  const [accessCode, setAccessCode] = useState('')
   const [creating, setCreating] = useState(false)
   const [message, setMessage] = useState('')
   const [registrations, setRegistrations] = useState([])
@@ -27,6 +28,7 @@ export default function Admin() {
   const [travelAge, setTravelAge] = useState('')
   const [clinicQuery, setClinicQuery] = useState('')
   const [clinicAge, setClinicAge] = useState('')
+  const ACCESS_CODE = 'Manny24'
   const PAGE_SIZE = 5
   const [campPage, setCampPage] = useState(0)
   const [travelPage, setTravelPage] = useState(0)
@@ -171,6 +173,11 @@ export default function Admin() {
       return
     }
 
+    if (accessCode !== ACCESS_CODE) {
+      setMessage('Invalid access code. Enter Manny24 to create an account.')
+      return
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       // If a name was provided, save it to the user's profile
@@ -185,6 +192,7 @@ export default function Admin() {
       setEmail('')
       setPassword('')
       setAdminName('')
+      setAccessCode('')
     } catch (err) {
       console.error(err)
       setMessage(err.message || 'Could not create account.')
@@ -314,10 +322,22 @@ export default function Admin() {
               <h2>{creating ? 'Create Admin Account' : 'Admin Sign In'}</h2>
               <form onSubmit={creating ? handleCreate : handleLogin}>
                 {creating && (
-                  <div className="form-group">
-                    <label>Name</label>
-                    <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} />
-                  </div>
+                  <>
+                    <div className="form-group">
+                      <label>Name</label>
+                      <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                      <label>Access Token</label>
+                      <input
+                        type="text"
+                        value={accessCode}
+                        onChange={(e) => setAccessCode(e.target.value)}
+                        required
+                        placeholder="Enter access token"
+                      />
+                    </div>
+                  </>
                 )}
                 <div className="form-group">
                   <label>Email</label>
@@ -334,7 +354,7 @@ export default function Admin() {
                   <button
                     type="button"
                     className="submit-button"
-                    onClick={() => setCreating((c) => { const next = !c; if (!next) setAdminName(''); return next })}
+                    onClick={() => setCreating((c) => { const next = !c; if (!next) { setAdminName(''); setAccessCode('') }; return next })}
                   >
                     {creating ? 'Switch to Sign In' : 'Create Account'}
                   </button>
