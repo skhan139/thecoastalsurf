@@ -78,6 +78,7 @@ export default function Home() {
               >
                 Download Image
               </a>
+              <p className="contact-info-text">Please contact Wayne Brown at 843-295-0010 or Rusty Magill at 252-489-5172 for questions or more information.</p>
             </div>
           </div>
           <div className="hero-content">
