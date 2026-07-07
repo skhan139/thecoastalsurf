@@ -144,8 +144,37 @@
 .hero-image-actions {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
   margin-top: 0.75rem;
   padding-bottom: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.slider-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.slider-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.slider-indicator {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
 }
 
 .download-image-button {

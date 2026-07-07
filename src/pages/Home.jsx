@@ -2,9 +2,16 @@ import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import './Home.css'
 
+const imageSlides = [
+  { src: '/images/neworg.jpg', alt: 'The Coastal Surf organization photo 1', fileName: 'neworg.jpg' },
+  { src: '/images/neworg2.jpg', alt: 'The Coastal Surf organization photo 2', fileName: 'neworg2.jpg' },
+  { src: '/images/neworg3.jpg', alt: 'The Coastal Surf organization photo 3', fileName: 'neworg3.jpg' },
+]
+
 export default function Home() {
   const [showWave, setShowWave] = useState(false)
   const [showIntro, setShowIntro] = useState(false)
+  const [currentSlide, setCurrentSlide] = useState(0)
 
   useEffect(() => {
     try {
@@ -43,11 +50,30 @@ export default function Home() {
         )}
         <div className="hero-layout">
           <div className="hero-image-wrap">
-            <img src="/images/neworg.jpg" alt="The Coastal Surf organization" className="hero-image" />
+            <img src={imageSlides[currentSlide].src} alt={imageSlides[currentSlide].alt} className="hero-image" />
+            <div className="hero-image-actions">
+              <button
+                type="button"
+                className="slider-button"
+                onClick={() => setCurrentSlide((prev) => (prev === 0 ? imageSlides.length - 1 : prev - 1))}
+              >
+                Previous
+              </button>
+              <span className="slider-indicator">
+                {currentSlide + 1} / {imageSlides.length}
+              </span>
+              <button
+                type="button"
+                className="slider-button"
+                onClick={() => setCurrentSlide((prev) => (prev === imageSlides.length - 1 ? 0 : prev + 1))}
+              >
+                Next
+              </button>
+            </div>
             <div className="hero-image-actions">
               <a
-                href="/images/neworg.jpg"
-                download="coastal-surf-organization.jpg"
+                href={imageSlides[currentSlide].src}
+                download={imageSlides[currentSlide].fileName}
                 className="download-image-button"
               >
                 Download Image
