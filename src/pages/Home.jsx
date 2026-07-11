@@ -2,16 +2,9 @@ import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import './Home.css'
 
-const imageSlides = [
-  { src: '/images/neworg.jpg', alt: 'The Coastal Surf organization photo 1', fileName: 'neworg.jpg' },
-  { src: '/images/neworg2.jpg', alt: 'The Coastal Surf organization photo 2', fileName: 'neworg2.jpg' },
-  { src: '/images/neworg3.jpg', alt: 'The Coastal Surf organization photo 3', fileName: 'neworg3.jpg' },
-]
-
 export default function Home() {
   const [showWave, setShowWave] = useState(false)
   const [showIntro, setShowIntro] = useState(false)
-  const [currentSlide, setCurrentSlide] = useState(0)
 
   useEffect(() => {
     try {
@@ -49,36 +42,12 @@ export default function Home() {
           </div>
         )}
         <div className="hero-layout">
-          <div className="hero-image-wrap">
-            <img src={imageSlides[currentSlide].src} alt={imageSlides[currentSlide].alt} className="hero-image" />
-            <div className="hero-image-actions">
-              <button
-                type="button"
-                className="slider-button"
-                onClick={() => setCurrentSlide((prev) => (prev === 0 ? imageSlides.length - 1 : prev - 1))}
-              >
-                Previous
-              </button>
-              <span className="slider-indicator">
-                {currentSlide + 1} / {imageSlides.length}
-              </span>
-              <button
-                type="button"
-                className="slider-button"
-                onClick={() => setCurrentSlide((prev) => (prev === imageSlides.length - 1 ? 0 : prev + 1))}
-              >
-                Next
-              </button>
+          <div className="hero-images-grid">
+            <div className="hero-image-wrap">
+              <img src="/images/neworg2.jpg" alt="The Coastal Surf organization photo 1" className="hero-image" />
             </div>
-            <div className="hero-image-actions">
-              <a
-                href={imageSlides[currentSlide].src}
-                download={imageSlides[currentSlide].fileName}
-                className="download-image-button"
-              >
-                Download Image
-              </a>
-              <p className="contact-info-text">Please contact Wayne Brown at 843-295-0010 or Rusty Magill at 252-489-5172 for questions or more information.</p>
+            <div className="hero-image-wrap">
+              <img src="/images/neworg3.jpg" alt="The Coastal Surf organization photo 2" className="hero-image" />
             </div>
           </div>
           <div className="hero-content">
