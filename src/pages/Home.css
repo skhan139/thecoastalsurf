@@ -5,7 +5,7 @@
 .hero {
   background: linear-gradient(135deg, #008B8B 0%, #20B2AA 50%, #008B8B 100%);
   color: var(--white);
-  padding: 8rem 2rem;
+  padding: 4rem 2rem 8rem 2rem;
   min-height: 600px;
   display: flex;
   align-items: center;
@@ -93,7 +93,9 @@
   max-width: 560px;
   position: relative;
   z-index: 1;
-  text-align: left;
+  text-align: center;
+  order: 1;
+  margin: 0 auto;
 }
 
 .hero-title-images {
@@ -104,8 +106,8 @@
 }
 
 .hero-title-image {
-  width: 156px;
-  height: 156px;
+  width: 100px;
+  height: 100px;
   object-fit: cover;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.35);
@@ -116,7 +118,7 @@
   width: 100%;
   max-width: 1200px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 3rem;
   align-items: center;
   position: relative;
@@ -125,8 +127,9 @@
 
 .hero-images-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
+  order: 2;
 }
 
 .hero-image-wrap {
@@ -136,6 +139,8 @@
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
   background-color: rgba(0, 0, 0, 0.25);
   padding: 0.5rem;
+  max-width: 450px;
+  margin: 0 auto;
 }
 
 .hero-image {
